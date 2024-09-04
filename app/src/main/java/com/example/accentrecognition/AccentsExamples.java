@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
-public class AccentsExamples extends AppCompatActivity {
+public class AccentsExamples extends BaseActivity {
 
     private MediaPlayer mediaPlayer;
 
