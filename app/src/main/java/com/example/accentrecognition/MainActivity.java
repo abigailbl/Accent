@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
+    // Declare buttons for navigation to different activities
     private Button btnStart, btnHistory, btnAccentsExamples;
 
     @Override

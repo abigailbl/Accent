@@ -3,6 +3,7 @@ package com.example.accentrecognition;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.util.Log;
 import android.widget.TextView;
 
@@ -19,6 +20,7 @@ public class UploadAudioTask extends AsyncTask<String, Void, String> {
     private static final String TAG = "UploadAudioTask";
     private TextView responseTextView;
     private String audioFilePath;
+    // Constructor to initialize class fields
 
     public UploadAudioTask(SharedPreferences sharedPreferences,Context context,TextView responseTextView, String audioFilePath) {
         this.responseTextView = responseTextView;
@@ -26,9 +28,7 @@ public class UploadAudioTask extends AsyncTask<String, Void, String> {
         this.context = context;
         this.sharedPreferences = sharedPreferences;
     }
-//    public UploadAudioTask(TextView responseTextView) {
-//        this.responseTextView = responseTextView;
-//    }
+
 
     @Override
     protected String doInBackground(String... params) {
@@ -47,8 +47,10 @@ public class UploadAudioTask extends AsyncTask<String, Void, String> {
         try {
             Log.d("stop", "upload audio start try " );
 
+            // Open file input stream for reading the audio file
             FileInputStream fileInputStream = new FileInputStream(new File(filePath));
 
+            // Open a connection to the server URL
             URL url = new URL(serverUrl);
             connection = (HttpURLConnection) url.openConnection();
             connection.setDoInput(true);
@@ -61,6 +63,7 @@ public class UploadAudioTask extends AsyncTask<String, Void, String> {
 
 
             try {
+                // Create output stream for uploading data
                 outputStream = new DataOutputStream(connection.getOutputStream());
             } catch (IOException e) {
                 Log.e(TAG, "Error creating DataOutputStream: " + e.getMessage());
@@ -74,11 +77,13 @@ public class UploadAudioTask extends AsyncTask<String, Void, String> {
             outputStream.writeBytes("Content-Disposition: form-data; name=\"file\";filename=\"" + filePath + "\"" + lineEnd);
             outputStream.writeBytes(lineEnd);
 
+            // Prepare buffer to read the file data
             int bytesAvailable = fileInputStream.available();
             int maxBufferSize = 1 * 1024 * 1024;
             int bufferSize = Math.min(bytesAvailable, maxBufferSize);
             byte[] buffer = new byte[bufferSize];
 
+            // Read and upload file data in chunks
             int bytesRead = fileInputStream.read(buffer, 0, bufferSize);
             Log.d("stop", "upload audio before while " );
 
@@ -93,16 +98,19 @@ public class UploadAudioTask extends AsyncTask<String, Void, String> {
             outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
             Log.d("stop", "upload audio in try before connection " );
 
+            // Get response from server
             int serverResponseCode = connection.getResponseCode();
             String serverResponseMessage = connection.getResponseMessage();
 
             Log.d(TAG, "HTTP Response is : " + serverResponseMessage + ": " + serverResponseCode);
             Log.d("stop", "upload audio in try " );
 
+            // Close streams after upload is complete
             fileInputStream.close();
             outputStream.flush();
             outputStream.close();
 
+            // Get server response as InputStream and read it
             InputStream is = connection.getInputStream();
             int ch;
             StringBuffer b = new StringBuffer();
@@ -122,57 +130,52 @@ public class UploadAudioTask extends AsyncTask<String, Void, String> {
         if (result != null) {
             Log.d(TAG, "Server Response: " + result);
             String responseText = "Your detected mother tongue is: " + result;
-            responseTextView.setText(responseText); // עדכון TextView עם התשובה
+            responseTextView.setText(responseText);
+            new Handler().postDelayed(() -> {
+                responseTextView.setText("");
+            }, 5000);
             renameRecording(result);
         } else {
             Log.e(TAG, "Failed to upload file to server.");
             responseTextView.setText("Failed to upload file to server.");
+            new Handler().postDelayed(() -> {
+                responseTextView.setText("");
+            }, 5000);
         }
     }
+
+    // Rename the recording based on the detected country
     private void renameRecording(String country) {
-        // הנתיב של הקובץ הנוכחי
         File originalFile = new File(audioFilePath);
 
-        // בניית שם הקובץ החדש המבוסס על שם המדינה ונתון ייחודי
-        String uniqueId = String.valueOf(System.currentTimeMillis()); // ניתן גם להשתמש ב-ID ייחודי אחר
+        String uniqueId = String.valueOf(System.currentTimeMillis());
         String newFileName = context.getFilesDir().getAbsolutePath() + "/recording_" + uniqueId + "_" + country;
         File renamedFile = new File(newFileName);
 
-        // שינוי שם הקובץ
         boolean renamed = originalFile.renameTo(renamedFile);
 
         if (renamed) {
             Log.d("RenameRecording", "Recording renamed successfully to: " + renamedFile.getName());
 
-            // עדכון של ההקלטה ברשימת ההקלטות ב- SharedPreferences
             updateRecordingInPreferences(renamedFile.getAbsolutePath());
         } else {
             Log.e("RenameRecording", "Failed to rename recording.");
         }
     }
 
-
-
+    // Update the recording file path in SharedPreferences
     private void updateRecordingInPreferences(String newFilePath) {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         Set<String> recordings = sharedPreferences.getStringSet("recordingsList", new HashSet<>());
 
-        // מחיקת ההקלטה הישנה מהרשימה אם קיימת
         recordings.removeIf(filePath -> filePath.contains("The resulting accent is "));
 
-        // הוספת שם הקובץ החדש לרשימה
         recordings.add(newFilePath);
 
-        // שמירה מחדש של הרשימה המעודכנת
         editor.putStringSet("recordingsList", recordings);
         editor.apply();
 
         Log.d("UpdatePreferences", "Updated recording list in SharedPreferences.");
     }
-
-//    private void saveRecording(String country) {
-//        // קריאה למתודה מחוץ ל-AsyncTask כדי לשמור את ההקלטה
-//        ((StartActivity) responseTextView.getContext()).saveRecording(audioFilePath, country);
-//    }
 
 }

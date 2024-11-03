@@ -36,17 +36,24 @@ public class HistoryActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_history);
 
+        // Initialize SharedPreferences for storing recordings list
         sharedPreferences = getSharedPreferences("recordings", Context.MODE_PRIVATE);
         recordingsLayout = findViewById(R.id.recordingsLayout);
         btnStop = findViewById(R.id.btnStop);
 
+        // Clean up any unnamed recordings
         cleanUpRecordings();
+
+        // Load the list of recordings from SharedPreferences
         loadRecordings();
+
+        // Display each recording in the layout
         displayRecordings();
 
         btnStop.setOnClickListener(view -> stopPlayback());
     }
 
+    // Deletes any invalid recordings and cleans up recordings list
     private void cleanUpRecordings() {
         Set<String> recordings = sharedPreferences.getStringSet("recordingsList", new HashSet<>());
         Set<String> updatedRecordings = new HashSet<>();
@@ -68,18 +75,20 @@ public class HistoryActivity extends BaseActivity {
             }
         }
 
+        // Update recordings list in SharedPreferences
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putStringSet("recordingsList", updatedRecordings);
         editor.apply();
     }
 
-
+    // Loads recordings list from SharedPreferences into recordingsList
     private void loadRecordings() {
         Set<String> recordings = sharedPreferences.getStringSet("recordingsList", new HashSet<>());
         recordingsList = new ArrayList<>(recordings);
         Log.d("LoadRecordings", "Loaded recordings: " + recordingsList.toString());
     }
 
+    // Dynamically displays each recording as a button with a delete option
     private void displayRecordings() {
         recordingsLayout.removeAllViews();
         for (int i = 0; i < recordingsList.size(); i++) {
@@ -105,7 +114,7 @@ public class HistoryActivity extends BaseActivity {
         }
     }
 
-
+    // Plays selected recording from file path
     private void playRecording(String filePath) {
         if (mediaPlayer != null) {
             mediaPlayer.release();
@@ -122,6 +131,7 @@ public class HistoryActivity extends BaseActivity {
         }
     }
 
+    // Stops currently playing audio
     private void stopPlayback() {
         if (mediaPlayer != null) {
             mediaPlayer.stop();
@@ -131,6 +141,7 @@ public class HistoryActivity extends BaseActivity {
         }
     }
 
+    // Confirms before deleting recording
     private void confirmDeleteRecording(int position) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Delete Recording")
@@ -140,6 +151,7 @@ public class HistoryActivity extends BaseActivity {
                 .show();
     }
 
+    // Deletes recording and updates the list in SharedPreferences
     private void deleteRecording(int position) {
         String filePath = recordingsList.get(position);
         File file = new File(filePath);

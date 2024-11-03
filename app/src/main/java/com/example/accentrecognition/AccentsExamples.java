@@ -8,6 +8,7 @@ import android.widget.Button;
 
 public class AccentsExamples extends BaseActivity {
 
+    // MediaPlayer instance to handle audio playback
     private MediaPlayer mediaPlayer;
 
     @Override
@@ -15,11 +16,13 @@ public class AccentsExamples extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_accents_examples);
 
+        // Buttons for different accents
         Button buttonIndia = findViewById(R.id.button_india);
         Button buttonUS = findViewById(R.id.button_us);
         Button buttonEngland = findViewById(R.id.button_england);
         Button buttonStop = findViewById(R.id.button_stop);
 
+        // Set onClickListeners for each button to play corresponding audio
         buttonIndia.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -41,6 +44,7 @@ public class AccentsExamples extends BaseActivity {
             }
         });
 
+        // Set onClickListener for the stop button to stop audio playback
         buttonStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -49,14 +53,18 @@ public class AccentsExamples extends BaseActivity {
         });
     }
 
+    // Plays the specified audio file by resource ID
     private void playAudio(int audioResId) {
+        // Release existing MediaPlayer instance if it exists
         if (mediaPlayer != null) {
             mediaPlayer.release();
         }
+        // Create a new MediaPlayer with the selected audio and start playback
         mediaPlayer = MediaPlayer.create(this, audioResId);
         mediaPlayer.start();
     }
 
+    // Stops audio playback if it's currently playing
     private void stopAudio() {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mediaPlayer.stop();
@@ -65,6 +73,7 @@ public class AccentsExamples extends BaseActivity {
         }
     }
 
+    // Releases MediaPlayer resources when the activity is destroyed
     @Override
     protected void onDestroy() {
         super.onDestroy();

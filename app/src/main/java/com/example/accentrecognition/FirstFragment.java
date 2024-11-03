@@ -12,6 +12,7 @@ import com.example.accentrecognition.databinding.FragmentFirstBinding;
 
 public class FirstFragment extends Fragment {
 
+    // View binding for easy access to views
     private FragmentFirstBinding binding;
 
     @Override
@@ -19,15 +20,16 @@ public class FirstFragment extends Fragment {
             LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState
     ) {
-
+        // Inflate the layout using view binding
         binding = FragmentFirstBinding.inflate(inflater, container, false);
-        return binding.getRoot();
-
+        return binding.getRoot(); // Return the root view
     }
 
+    @Override
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        // Set a click listener for the button to navigate to SecondFragment
         binding.buttonFirst.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -40,7 +42,6 @@ public class FirstFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        binding = null;
+        binding = null; // Release binding reference to avoid memory leaks
     }
-
 }

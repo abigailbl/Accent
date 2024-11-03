@@ -31,15 +31,13 @@ public class StartActivity extends BaseActivity {
     private SharedPreferences sharedPreferences;
     private int recordingCounter = 1; // Start from 1
     private String[] sentences = {
-            "The sun was shining brightly in the sky. Birds were chirping as they flew between the trees." +
-                    " A soft breeze carried the scent of " +
-                    "flowers through the air. It was a perfect day to spend outside in nature.",
-            "John had always wanted to travel the world. He dreamed of visiting different countries and learning about" +
-                    " their cultures. Finally, he saved enough money to begin his journey. His first stop was Paris, where he admired the beautiful architecture.",
-            "The cat sat quietly on the windowsill, watching the world go by. It enjoyed the warmth of the sunlight streaming through the glass. Occasionally, it would twitch its tail in response to something outside. But mostly, it was content just to relax in its cozy spot.",
-            "Sarah worked hard every day to achieve her goals. She studied long hours and remained focused on her future. Despite the challenges, she never gave up. Eventually, her dedication paid off, and she succeeded beyond her expectations.",
-            "The storm raged outside, with lightning flashing across the sky. Thunder boomed, shaking the house with each loud clap. Inside, the family huddled together for warmth and comfort. They waited patiently for the storm to pass, hoping for a clear morning.",
-            "Technology has changed the way people live and work. With the rise of smartphones and computers, information is now at our fingertips. Communication has become instant, connecting people from different parts of the world. This shift has made the world feel smaller and more interconnected."
+            // List of sentences to display randomly on the screen for recording practice
+            "The sun was shining brightly in the sky. Birds were chirping as they flew between the trees. A soft breeze carried the scent of flowers through the air.",
+            "The cat sat quietly on the windowsill, watching the world go by. It enjoyed the warmth of the sunlight streaming through the glass.",
+            "The café was warm and cozy, filled with the scent of freshly baked pastries. Rosie sipped her coffee, enjoying the momentary escape from the cold outside.",
+            "The garden was in full bloom, with vibrant flowers swaying in the breeze. Rebecca knelt down to admire a particularly beautiful rose, careful not to disturb its delicate petals.",
+            "Please call Stella and ask her to bring these things from the store: six spoons of fresh snow peas, five thick slabs of blue cheese, and maybe a snack for her brother Bob. We also need a small plastic snake and a big toy frog for the kids.",
+            "The mountains stood tall and majestic against the clear blue sky. Johnny took a deep breath, grateful for the beauty and peace that surrounded him."
     };
 
     private TextView tvSentence;
@@ -50,32 +48,38 @@ public class StartActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start);
 
+        // Initialize SharedPreferences to save recordings locally
         sharedPreferences = getSharedPreferences("recordings", Context.MODE_PRIVATE);
 
+        // Initialize sentence TextView and change text button
         tvSentence = findViewById(R.id.tvSentence);
         btnChangeText = findViewById(R.id.btnChangeText);
 
+        // Display a random sentence on screen initially
         String randomSentence = getRandomSentence();
         tvSentence.setText(randomSentence);
 
+        // Set listener for changing the sentence displayed on button click
         btnChangeText.setOnClickListener(view -> {
             String newSentence = getRandomSentence();
             tvSentence.setText(newSentence);
         });
 
+        // Initialize microphone button and load pulse animation
         ImageButton btnMicrophone = findViewById(R.id.btnMicrophone);
         pulseAnimation = AnimationUtils.loadAnimation(this, R.anim.pulse);
 
+        // Set listener for microphone button to start or stop recording
         btnMicrophone.setOnClickListener(view -> {
             if (isRecording) {
+                // Stop recording if already recording
                 stopRecording();
                 isRecording = false;
                 btnMicrophone.clearAnimation();
                 Log.d("Recording", "Recording stopped and file saved.");
-
             } else {
+                // Start recording if permissions are granted
                 Log.d("Recording", "before check permission.");
-
                 if (checkPermissions()) {
                     startRecording();
                     isRecording = true;
@@ -86,24 +90,20 @@ public class StartActivity extends BaseActivity {
         });
     }
 
+    // Generate a random sentence from the array
     private String getRandomSentence() {
         Random random = new Random();
         int index = random.nextInt(sentences.length);
         return sentences[index];
     }
 
-
+    // Check and request permissions for audio recording and storage
     private boolean checkPermissions() {
         boolean audioPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
         boolean storagePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
-//        if ( !storagePermission) {
-//            Log.d("Recording", "storage ermission.");
-//            ActivityCompat.requestPermissions(this,
-//                    new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.MANAGE_EXTERNAL_STORAGE}, 200);
-//            return false;
-//        }
-        if (!audioPermission ) {
-            Log.d("Recording", "audio ermission.");
+
+        if (!audioPermission) {
+            Log.d("Recording", "Audio permission missing.");
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 200);
             return false;
@@ -111,6 +111,7 @@ public class StartActivity extends BaseActivity {
         return true;
     }
 
+    // Start recording audio and save file to internal storage
     private void startRecording() {
         audioFilePath = getFilesDir().getAbsolutePath() + "/audioRecording_" + System.currentTimeMillis() + ".3gp";
 
@@ -129,23 +130,26 @@ public class StartActivity extends BaseActivity {
         }
     }
 
-
+    // Stop recording and release MediaRecorder resources
     private void stopRecording() {
         if (mediaRecorder != null) {
             mediaRecorder.stop();
             mediaRecorder.release();
             mediaRecorder = null;
             saveRecording(audioFilePath);
-            String serverUrl = "http://10.100.102.7:5000/predict";
 
+            // Define the server URL to send audio for processing
+            String serverUrl = "http://10.100.102.8:5000/predict";
+
+            // Initialize TextView to display server response
             TextView responseTextView = findViewById(R.id.tvResponse);
-//            new UploadAudioTask(responseTextView).execute(audioFilePath, serverUrl);
-            new UploadAudioTask(sharedPreferences,this,responseTextView, audioFilePath).execute(audioFilePath,serverUrl);
+            new UploadAudioTask(sharedPreferences, this, responseTextView, audioFilePath).execute(audioFilePath, serverUrl);
 
             Toast.makeText(this, "Recording stopped", Toast.LENGTH_SHORT).show();
         }
     }
 
+    // Save the recording file path to SharedPreferences
     private void saveRecording(String filePath) {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         Set<String> recordings = sharedPreferences.getStringSet("recordingsList", new HashSet<>());
@@ -157,25 +161,7 @@ public class StartActivity extends BaseActivity {
         Log.d("SaveRecording", "Saved recording at path: " + filePath);
     }
 
-//    private void saveRecording(String filePath, String country) {
-//        SharedPreferences.Editor editor = sharedPreferences.edit();
-//        Set<String> recordings = sharedPreferences.getStringSet("recordingsList", new HashSet<>());
-//
-//        // יצירת שם קובץ ממוספר עם המדינה
-//        String numberedRecording = recordingCounter + " " + country;
-//        recordings.add(numberedRecording + " - " + filePath);
-//
-//        // עדכון SharedPreferences
-//        editor.putStringSet("recordingsList", recordings);
-//        editor.apply();
-//
-//        // הגדלת המספר
-//        recordingCounter++;
-//
-//        Toast.makeText(this, "Recording saved: " + numberedRecording, Toast.LENGTH_SHORT).show();
-//        Log.d("SaveRecording", "Saved recording with country: " + numberedRecording);
-//    }
-
+    // Handle permission results from the user
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
